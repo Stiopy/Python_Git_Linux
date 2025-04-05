@@ -39,7 +39,7 @@ app.css.append_css({
 
 # Mise en page du dashboard
 app.layout = html.Div([
-    html.H1("Prix du pétrole WTI 📈", style={"textAlign": "center", "color": "#333"}),
+    html.H1("🛢️ Prix du pétrole WTI 📈", style={"textAlign": "center", "color": "#333"}),
 
     dcc.Interval(id="interval", interval=5*60*1000, n_intervals=0),  # Refresh toutes les 5 minutes
 
@@ -119,19 +119,19 @@ def update_dashboard(n):
             evolution = ((close_price - open_price) / open_price) * 100
 
             rapport = html.Ul([
-                html.Li(f"Prix d'ouverture : {open_price:.2f} USD", style={"color": "#333"}),
-                html.Li(f"Prix de clôture : {close_price:.2f} USD", style={"color": "#333"}),
+                html.Li(f"📈 Prix d'ouverture : {open_price:.2f} USD", style={"color": "#333"}),
+                html.Li(f"📉 Prix de clôture : {close_price:.2f} USD", style={"color": "#333"}),
                 html.Li(
-                    f"Évolution : {evolution:.2f} %",
+                    f"📊 Évolution : {evolution:.2f} %",
                     style={"color": "green" if evolution >= 0 else "red"}
                 ),
-                html.Li(f"Min : {min_price:.2f} USD", style={"color": "#333"}),
-                html.Li(f"Max : {max_price:.2f} USD", style={"color": "#333"}),
-                html.Li(f"Moyenne : {mean_price:.2f} USD", style={"color": "#333"})
+                html.Li(f"🔻 Min : {min_price:.2f} USD", style={"color": "#333"}),
+                html.Li(f"🔺 Max : {max_price:.2f} USD", style={"color": "#333"}),
+                html.Li(f"📐 Moyenne : {mean_price:.2f} USD", style={"color": "#333"})
             ], style={"listStyleType": "none", "padding": "0"})
 
     return fig, recent_data, rapport
 
 # Lancer le serveur
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port = 8050)
+    app.run(debug=True, host = '0.0.0.0', port = 8050)
