@@ -1,3 +1,8 @@
+import pandas as pd
+from dash import Dash, dcc, html, Input, Output
+import plotly.express as px
+import datetime
+
 # Charger les données depuis le CSV
 def load_data():
     try:
