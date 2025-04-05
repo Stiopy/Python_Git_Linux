@@ -8,10 +8,7 @@ import datetime
 def load_data():
     try:
         # Lire le CSV qui a deux colonnes : "Date" (contenant date et heure) et "Prix"
-        df = pd.read_csv("scraping_data.csv", sep=";")
-        
-        # Renommer la colonne "Date" en "DateTime" pour plus de clarté
-        df = df.rename(columns={"Date": "DateTime"})
+        df = pd.read_csv("scraping_data.csv", sep=";", names=["DateTime", "Prix"])
         
         # Convertir la colonne "DateTime" en objet datetime
         df["DateTime"] = pd.to_datetime(df["DateTime"])
