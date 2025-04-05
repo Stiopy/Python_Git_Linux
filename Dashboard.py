@@ -1,62 +1,112 @@
 import pandas as pd
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, html, dash_table
+from dash.dependencies import Input, Output
 import plotly.express as px
 import datetime
 
 # Charger les données depuis le CSV
 def load_data():
     try:
+        # Lire le CSV qui a deux colonnes : "Date" (contenant date et heure) et "Prix"
         df = pd.read_csv("scraping_data.csv", sep=";")
-        df["DateTime"] = pd.to_datetime(df["Date"] + " " + df["Heure"])
+        
+        # Renommer la colonne "Date" en "DateTime" pour plus de clarté
+        df = df.rename(columns={"Date": "DateTime"})
+        
+        # Convertir la colonne "DateTime" en objet datetime
+        df["DateTime"] = pd.to_datetime(df["DateTime"])
+        
+        # Extraire la date et l'heure séparément
+        df["Date"] = df["DateTime"].dt.strftime("%Y-%m-%d")
+        df["Heure"] = df["DateTime"].dt.strftime("%H:%M:%S")
+        
+        # Convertir la colonne "Prix" en numérique, en gérant les erreurs
         df["Prix"] = pd.to_numeric(df["Prix"], errors="coerce")
+        
+        # Supprimer les lignes où le prix est NaN
+        df = df.dropna(subset=["Prix"])
+        
         return df
     except Exception as e:
         print("Erreur de chargement:", e)
-        return pd.DataFrame(columns=["Date", "Heure", "Prix", "DateTime"])
+        return pd.DataFrame(columns=["DateTime", "Date", "Heure", "Prix"])
 
 # Créer l'app Dash
 app = Dash(__name__)
 app.title = "Suivi Prix WTI - Dashboard"
 
+# Ajouter du CSS externe pour améliorer le style
+app.css.append_css({
+    "external_url": "https://codepen.io/chriddyp/pen/bWLwgP.css"
+})
+
+# Mise en page du dashboard
 app.layout = html.Div([
-    html.H1("Prix du pétrole WTI 📈", style={"textAlign": "center"}),
+    html.H1("Prix du pétrole WTI 📈", style={"textAlign": "center", "color": "#333"}),
 
-    dcc.Interval(id="interval", interval=5*60*1000, n_intervals=0),  # refresh toutes les 5 minutes
+    dcc.Interval(id="interval", interval=5*60*1000, n_intervals=0),  # Refresh toutes les 5 minutes
 
-    dcc.Graph(id="graphique"),
+    # Graphique
+    dcc.Graph(id="graphique", style={"height": "500px"}),
 
-    html.H2("Données récentes"),
-    html.Div(id="tableau"),
+    # Tableau des données récentes
+    html.H2("Données récentes", style={"textAlign": "center", "marginTop": "20px"}),
+    dash_table.DataTable(
+        id="tableau",
+        columns=[
+            {"name": "Date", "id": "Date"},
+            {"name": "Heure", "id": "Heure"},
+            {"name": "Prix", "id": "Prix"}
+        ],
+        style_table={"overflowX": "auto", "margin": "0 auto", "width": "80%"},
+        style_cell={"textAlign": "center", "padding": "10px"},
+        style_header={"backgroundColor": "#f0f0f0", "fontWeight": "bold"},
+        style_data_conditional=[
+            {"if": {"row_index": "odd"}, "backgroundColor": "#f9f9f9"}
+        ],
+        page_size=10  # Afficher 10 lignes par page
+    ),
 
-    html.H2("Rapport du jour (20h)"),
-    html.Div(id="rapport")
-])
+    # Rapport quotidien
+    html.H2("Rapport du jour (20h)", style={"textAlign": "center", "marginTop": "20px"}),
+    html.Div(id="rapport", style={"textAlign": "center", "marginBottom": "20px"})
+], style={"padding": "20px", "fontFamily": "Arial, sans-serif"})
 
-# Callback pour mettre à jour le graphique et les données
+# Callback pour mettre à jour le graphique, le tableau et le rapport
 @app.callback(
-    [   
-        dcc.Output("graphique", "figure"),
-        dcc.Output("tableau", "children"),
-        dcc.Output("rapport", "children")
+    [
+        Output("graphique", "figure"),
+        Output("tableau", "data"),
+        Output("rapport", "children")
     ],
-    [dcc.Input("interval", "n_intervals")]
+    [Input("interval", "n_intervals")]
 )
 def update_dashboard(n):
     df = load_data()
 
     if df.empty:
-        return {}, "Aucune donnée disponible.", "Aucune donnée pour le rapport."
+        return {}, [], "Aucune donnée disponible."
 
-    # Graph
-    fig = px.line(df, x="DateTime", y="Prix", title="Évolution du prix du WTI", markers=True)
+    # Graphique
+    fig = px.line(
+        df,
+        x="DateTime",
+        y="Prix",
+        title="Évolution du prix du WTI",
+        markers=True,
+        template="plotly_white"  # Thème clair (tu peux utiliser "plotly_dark" pour un thème sombre)
+    )
+    fig.update_layout(
+        title={"x": 0.5, "xanchor": "center"},
+        xaxis_title="Date et Heure",
+        yaxis_title="Prix (USD)",
+        font=dict(size=14),
+        margin=dict(l=50, r=50, t=80, b=50)
+    )
+    fig.update_traces(line_color="#1f77b4", marker=dict(size=8))
 
-    # Tableau HTML
-    table = html.Table([
-        html.Tr([html.Th(col) for col in ["Date", "Heure", "Prix"]])
-    ] + [
-        html.Tr([html.Td(df.iloc[i][col]) for col in ["Date", "Heure", "Prix"]])
-        for i in range(len(df)-1, max(len(df)-11, -1), -1)
-    ])
+    # Tableau des 10 dernières entrées (les plus récentes en haut)
+    recent_data = df[["Date", "Heure", "Prix"]].tail(10).iloc[::-1].to_dict("records")
 
     # Rapport quotidien si après 20h
     now = datetime.datetime.now()
@@ -72,16 +122,19 @@ def update_dashboard(n):
             evolution = ((close_price - open_price) / open_price) * 100
 
             rapport = html.Ul([
-                html.Li(f"Prix d'ouverture : {open_price:.2f}"),
-                html.Li(f"Prix de clôture : {close_price:.2f}"),
-                html.Li(f"Évolution : {evolution:.2f} %"),
-                html.Li(f"Min : {min_price:.2f}"),
-                html.Li(f"Max : {max_price:.2f}"),
-                html.Li(f"Moyenne : {mean_price:.2f}")
-            ])
+                html.Li(f"Prix d'ouverture : {open_price:.2f} USD", style={"color": "#333"}),
+                html.Li(f"Prix de clôture : {close_price:.2f} USD", style={"color": "#333"}),
+                html.Li(
+                    f"Évolution : {evolution:.2f} %",
+                    style={"color": "green" if evolution >= 0 else "red"}
+                ),
+                html.Li(f"Min : {min_price:.2f} USD", style={"color": "#333"}),
+                html.Li(f"Max : {max_price:.2f} USD", style={"color": "#333"}),
+                html.Li(f"Moyenne : {mean_price:.2f} USD", style={"color": "#333"})
+            ], style={"listStyleType": "none", "padding": "0"})
 
-    return fig, table, rapport
+    return fig, recent_data, rapport
 
 # Lancer le serveur
 if __name__ == "__main__":
-    app.run_server(debug=True, host = '0.0.0.0', port = 8050)
+    app.run(debug=True)
