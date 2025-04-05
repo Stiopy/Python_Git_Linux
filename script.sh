@@ -24,7 +24,7 @@ EXTRACTED_VALUE=$(echo "$HTML" \
   | sed 's/,/./g' \
   | sed 's/^\.+//')
 
-# Ajouter la date et le prix dans le fichier CSV (attention, ici on utilise une virgule comme séparateur)
+# Ajouter la date et le prix dans le fichier CSV
 echo "$DATE;$EXTRACTED_VALUE">>"$OUTPUT_FILE"
 
 #echo "Scraped price: $EXTRACTED_VALUE"
