@@ -24,6 +24,7 @@ A Python Dash app visualizes:
 📈 Highest and 📉 lowest prices
 📐 Mean price of the day
 📊 Daily return (% change)
+🔀 Volatility
 
 👨‍💻 Authors
 ARSLAN Arda & ARCHAMBAULT Stepane IF1
