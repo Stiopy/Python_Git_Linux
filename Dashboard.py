@@ -127,7 +127,7 @@ def update_dashboard(n):
             html.Li(f"🔻 Min : {min_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"🔺 Max : {max_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"📐 Moyenne : {mean_price:.2f} USD", style={"color": "#333"})
-            html.Li(f"📉 Volatilité : {volatility:.4f}", style={"color": "#333"})
+            html.Li(f"🔀 Volatilité : {volatility:.4f}", style={"color": "#333"})
         ], style={"listStyleType": "none", "padding": "0"})
     else:
         rapport = "Aucune donnée pour aujourd’hui."
