@@ -4,7 +4,7 @@
 URL="https://www.boursorama.com/bourse/matieres-premieres/cours/8xWBS/"
 
 # Chemin du fichier CSV
-OUTPUT_FILE="scraping_data.csv"
+OUTPUT_FILE="/home/ubuntu/Python_Git_Linux/scraping_data.csv"
 
 # Écrire l'en-tête dans le CSV
 #echo "Date;Prix">>"$OUTPUT_FILE"
