@@ -10,8 +10,8 @@ def load_data():
         # Lire le CSV qui a deux colonnes : "Date" (contenant date et heure) et "Prix"
         df = pd.read_csv("scraping_data.csv", sep=";", names=["DateTime", "Prix"])
         
-        # Convertir la colonne "DateTime" en objet datetime
-        df["DateTime"] = pd.to_datetime(df["DateTime"])
+        # Convertir la colonne "DateTime" en objet datetime, et mettre le jour en premier
+        df["DateTime"] = pd.to_datetime(df["DateTime"], dayfirst=True)
         
         # Extraire la date et l'heure séparément
         df["Date"] = df["DateTime"].dt.strftime("%Y-%m-%d")
@@ -39,7 +39,7 @@ app.css.append_css({
 
 # Mise en page du dashboard
 app.layout = html.Div([
-    html.H1("🛢️ Prix du pétrole WTI 📈", style={"textAlign": "center", "color": "#333"}),
+    html.H1("🛢️ Prix du pétrole WTI 📈📉", style={"textAlign": "center", "color": "#333"}),
 
     dcc.Interval(id="interval", interval=5*60*1000, n_intervals=0),  # Refresh toutes les 5 minutes
 
@@ -47,7 +47,7 @@ app.layout = html.Div([
     dcc.Graph(id="graphique", style={"height": "500px"}),
 
     # Tableau des données récentes
-    html.H2("Données récentes", style={"textAlign": "center", "marginTop": "20px"}),
+    html.H2("📊 Données récentes", style={"textAlign": "center", "marginTop": "20px"}),
     dash_table.DataTable(
         id="tableau",
         columns=[
@@ -65,7 +65,7 @@ app.layout = html.Div([
     ),
 
     # Rapport quotidien
-    html.H2("Rapport du jour (20h)", style={"textAlign": "center", "marginTop": "20px"}),
+    html.H2("📅 Rapport du jour :", style={"textAlign": "center", "marginTop": "20px"}),
     html.Div(id="rapport", style={"textAlign": "center", "marginBottom": "20px"})
 ], style={"padding": "20px", "fontFamily": "Arial, sans-serif"})
 
@@ -107,31 +107,32 @@ def update_dashboard(n):
 
     # Rapport quotidien si après 20h
     now = datetime.datetime.now()
-    rapport = "Le rapport sera disponible à 20h."
-    if now.hour >= 20 and not df.empty:
-        df_today = df[df["Date"] == now.strftime("%Y-%m-%d")]
-        if not df_today.empty:
-            open_price = df_today["Prix"].iloc[0]
-            close_price = df_today["Prix"].iloc[-1]
-            min_price = df_today["Prix"].min()
-            max_price = df_today["Prix"].max()
-            mean_price = df_today["Prix"].mean()
-            evolution = ((close_price - open_price) / open_price) * 100
+    df_today = df[df["Date"] == now.strftime("%Y-%m-%d")]
+    if not df_today.empty:
+        open_price = df_today["Prix"].iloc[0]
+        close_price = df_today["Prix"].iloc[-1]
+        min_price = df_today["Prix"].min()
+        max_price = df_today["Prix"].max()
+        mean_price = df_today["Prix"].mean()
+        evolution = ((close_price - open_price) / open_price) * 100
 
-            rapport = html.Ul([
-                html.Li(f"📈 Prix d'ouverture : {open_price:.2f} USD", style={"color": "#333"}),
-                html.Li(f"📉 Prix de clôture : {close_price:.2f} USD", style={"color": "#333"}),
-                html.Li(
-                    f"📊 Évolution : {evolution:.2f} %",
-                    style={"color": "green" if evolution >= 0 else "red"}
-                ),
-                html.Li(f"🔻 Min : {min_price:.2f} USD", style={"color": "#333"}),
-                html.Li(f"🔺 Max : {max_price:.2f} USD", style={"color": "#333"}),
-                html.Li(f"📐 Moyenne : {mean_price:.2f} USD", style={"color": "#333"})
-            ], style={"listStyleType": "none", "padding": "0"})
+        rapport = html.Ul([
+            html.Li(f"📈 Prix d'ouverture : {open_price:.2f} USD", style={"color": "#333"}),
+            html.Li(f"📉 Prix de clôture : {close_price:.2f} USD", style={"color": "#333"}),
+            html.Li(
+                f"📊 Évolution : {evolution:.2f} %",
+                style={"color": "green" if evolution >= 0 else "red"}
+            ),
+            html.Li(f"🔻 Min : {min_price:.2f} USD", style={"color": "#333"}),
+            html.Li(f"🔺 Max : {max_price:.2f} USD", style={"color": "#333"}),
+            html.Li(f"📐 Moyenne : {mean_price:.2f} USD", style={"color": "#333"})
+        ], style={"listStyleType": "none", "padding": "0"})
+    else:
+        rapport = "Aucune donnée pour aujourd’hui."
+
 
     return fig, recent_data, rapport
 
 # Lancer le serveur
 if __name__ == "__main__":
-    app.run(debug=True, host = '0.0.0.0', port = 8050)
+    app.run(debug=True, host='0.0.0.0', port=8050)
