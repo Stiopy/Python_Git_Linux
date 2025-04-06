@@ -114,6 +114,7 @@ def update_dashboard(n):
         min_price = df_today["Prix"].min()
         max_price = df_today["Prix"].max()
         mean_price = df_today["Prix"].mean()
+        volatility = df_today["Prix"].std()
         evolution = ((close_price - open_price) / open_price) * 100
 
         rapport = html.Ul([
@@ -126,6 +127,7 @@ def update_dashboard(n):
             html.Li(f"🔻 Min : {min_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"🔺 Max : {max_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"📐 Moyenne : {mean_price:.2f} USD", style={"color": "#333"})
+            html.Li(f"📉 Volatilité : {volatility:.4f}", style={"color": "#333"})
         ], style={"listStyleType": "none", "padding": "0"})
     else:
         rapport = "Aucune donnée pour aujourd’hui."
