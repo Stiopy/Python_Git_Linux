@@ -8,7 +8,7 @@ import datetime
 def load_data():
     try:
         df = pd.read_csv("scraping_data.csv", sep=";", names=["DateTime", "Prix"])
-        df["DateTime"] = pd.to_datetime(df["DateTime"], dayfirst=True)
+        df["DateTime"] = pd.to_datetime(df["DateTime"])
         df["Date"] = df["DateTime"].dt.strftime("%Y-%m-%d")
         df["Heure"] = df["DateTime"].dt.strftime("%H:%M:%S")
         df["Prix"] = pd.to_numeric(df["Prix"], errors="coerce")
