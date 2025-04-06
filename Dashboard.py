@@ -7,22 +7,12 @@ import datetime
 # Charger les données depuis le CSV
 def load_data():
     try:
-        # Lire le CSV qui a deux colonnes : "Date" (contenant date et heure) et "Prix"
         df = pd.read_csv("scraping_data.csv", sep=";", names=["DateTime", "Prix"])
-        
-        # Convertir la colonne "DateTime" en objet datetime, et mettre le jour en premier
         df["DateTime"] = pd.to_datetime(df["DateTime"], dayfirst=True)
-        
-        # Extraire la date et l'heure séparément
         df["Date"] = df["DateTime"].dt.strftime("%Y-%m-%d")
         df["Heure"] = df["DateTime"].dt.strftime("%H:%M:%S")
-        
-        # Convertir la colonne "Prix" en numérique, en gérant les erreurs
         df["Prix"] = pd.to_numeric(df["Prix"], errors="coerce")
-        
-        # Supprimer les lignes où le prix est NaN
         df = df.dropna(subset=["Prix"])
-        
         return df
     except Exception as e:
         print("Erreur de chargement:", e)
@@ -41,12 +31,10 @@ app.css.append_css({
 app.layout = html.Div([
     html.H1("🛢️ Prix du pétrole WTI 📈📉", style={"textAlign": "center", "color": "#333"}),
 
-    dcc.Interval(id="interval", interval=5*60*1000, n_intervals=0),  # Refresh toutes les 5 minutes
+    dcc.Interval(id="interval", interval=5*60*1000, n_intervals=0),
 
-    # Graphique
     dcc.Graph(id="graphique", style={"height": "500px"}),
 
-    # Tableau des données récentes
     html.H2("📊 Données récentes", style={"textAlign": "center", "marginTop": "20px"}),
     dash_table.DataTable(
         id="tableau",
@@ -61,15 +49,14 @@ app.layout = html.Div([
         style_data_conditional=[
             {"if": {"row_index": "odd"}, "backgroundColor": "#f9f9f9"}
         ],
-        page_size=10  # Afficher 10 lignes par page
+        page_size=10
     ),
 
-    # Rapport quotidien
     html.H2("📅 Rapport du jour :", style={"textAlign": "center", "marginTop": "20px"}),
     html.Div(id="rapport", style={"textAlign": "center", "marginBottom": "20px"})
 ], style={"padding": "20px", "fontFamily": "Arial, sans-serif"})
 
-# Callback pour mettre à jour le graphique, le tableau et le rapport
+# Callback pour mettre à jour le dashboard
 @app.callback(
     [
         Output("graphique", "figure"),
@@ -84,14 +71,13 @@ def update_dashboard(n):
     if df.empty:
         return {}, [], "Aucune donnée disponible."
 
-    # Graphique
     fig = px.line(
         df,
         x="DateTime",
         y="Prix",
         title="Évolution du prix du WTI",
         markers=True,
-        template="plotly_white"  # Thème clair (tu peux utiliser "plotly_dark" pour un thème sombre)
+        template="plotly_white"
     )
     fig.update_layout(
         title={"x": 0.5, "xanchor": "center"},
@@ -102,13 +88,12 @@ def update_dashboard(n):
     )
     fig.update_traces(line_color="#1f77b4", marker=dict(size=8))
 
-    # Tableau des 10 dernières entrées (les plus récentes en haut)
     recent_data = df[["Date", "Heure", "Prix"]].tail(10).iloc[::-1].to_dict("records")
 
-    # Rapport quotidien si après 20h
     now = datetime.datetime.now()
     df_today = df[df["Date"] == now.strftime("%Y-%m-%d")]
-    if not df_today.empty:
+
+    if not df_today.empty and now.hour >= 20:
         open_price = df_today["Prix"].iloc[0]
         close_price = df_today["Prix"].iloc[-1]
         min_price = df_today["Prix"].min()
@@ -120,18 +105,14 @@ def update_dashboard(n):
         rapport = html.Ul([
             html.Li(f"📈 Prix d'ouverture : {open_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"📉 Prix de clôture : {close_price:.2f} USD", style={"color": "#333"}),
-            html.Li(
-                f"📊 Évolution : {evolution:.2f} %",
-                style={"color": "green" if evolution >= 0 else "red"}
-            ),
+            html.Li(f"📊 Évolution : {evolution:.2f} %", style={"color": "green" if evolution >= 0 else "red"}),
             html.Li(f"🔻 Min : {min_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"🔺 Max : {max_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"📐 Moyenne : {mean_price:.2f} USD", style={"color": "#333"}),
             html.Li(f"🔀 Volatilité : {volatility:.4f}", style={"color": "#333"})
         ], style={"listStyleType": "none", "padding": "0"})
     else:
-        rapport = "Aucune donnée pour aujourd’hui."
-
+        rapport = "Le rapport du jour sera disponible après 20h."
 
     return fig, recent_data, rapport
 
