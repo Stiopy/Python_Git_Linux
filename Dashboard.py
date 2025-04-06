@@ -112,7 +112,7 @@ def update_dashboard(n):
             html.Li(f"🔀 Volatilité : {volatility:.4f}", style={"color": "#333"})
         ], style={"listStyleType": "none", "padding": "0"})
     else:
-        rapport = "Le rapport du jour sera disponible après 20h."
+        rapport = "Le rapport du jour sera disponible à partir de 20h."
 
     return fig, recent_data, rapport
 
